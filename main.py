@@ -49,10 +49,13 @@ async def generate_agent(
 
         # 3. Run LangChain Agent
         feedback, message = run_agent_workflow(context, jd_text)
+        print("AI Workflow Done!")
 
         return AgentResponse(feedback=feedback, message=message)
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
         
     finally:
