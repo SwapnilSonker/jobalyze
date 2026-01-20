@@ -12,9 +12,10 @@ def setup_vector_store(text_content: str):
     Ingests text, splits it, and stores in a volatile ChromaDB instance.
     """
     # 1. Split Text into Chunks
+    # Smaller chunks with more overlap ensure better section coverage
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
+        chunk_size=800,
+        chunk_overlap=300
     )
     docs = [Document(page_content=text_content)]
     splits = text_splitter.split_documents(docs)
@@ -34,8 +35,9 @@ def setup_vector_store(text_content: str):
 def get_relevant_context(vectorstore, query: str):
     """
     Retrieves the most relevant parts of the resume for the JD.
+    Increased k=10 to ensure all sections (Skills, Education, Projects, etc.) are captured.
     """
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
     docs = retriever.invoke(query)
     # Combine retrieved docs into a single string
     return "\n\n".join([doc.page_content for doc in docs])

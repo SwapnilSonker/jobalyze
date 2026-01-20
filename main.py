@@ -68,13 +68,17 @@ async def generate_agent(
         if len(raw_text) > 4000:
             vector_db = setup_vector_store(raw_text)
             context = get_relevant_context(vector_db, query=jd_text)
+            print(f"📊 Using RAG: Retrieved {len(context)} chars from vector store")
+            print(f"📄 Context preview (first 500 chars): {context[:500]}...")
         else:
             context = raw_text
+            print(f"📊 Using full resume: {len(context)} chars")
 
         print("AI Analyzing & Generating Edits...")
         feedback, message = run_agent_workflow(context, jd_text)
 
         # 5. Apply Edits to DOCX
+        print(f"✅ AI Generated {len(feedback.detailed_edits)} edits")
         print("Applying Edits to DOCX...")
         
         edits_list = []
@@ -83,6 +87,7 @@ async def generate_agent(
                 "original_text": edit.original_text,
                 "new_text": edit.new_text
             })
+            print(f"  - {edit.section}: {edit.change_type}")
             
         final_docx_path = update_word_resume(temp_docx_path, edits_list, f"final_{uuid.uuid4()}.docx")
 

@@ -7,7 +7,7 @@ from schemas import ResumeFeedback, LinkedInDraft, ResumeEdit  # <--- Make sure 
 
 # 1. Setup LLM
 llm = ChatGroq(
-    temperature=0.4, 
+    temperature=0.0, 
     model_name="llama-3.1-8b-instant", 
     api_key=os.getenv("GROQ_API_KEY")
 )
@@ -19,9 +19,13 @@ message_parser = PydanticOutputParser(pydantic_object=LinkedInDraft)
 # --- PROMPT 1: ANALYSIS, REWRITE & LOGGING (UPDATED) ---
 analysis_prompt = PromptTemplate(
     template="""
-    You are a strict backend data processor. Output ONLY JSON.
+    You are a strict ATS (Applicant Tracking System) Scanner and Resume Editor. Output ONLY JSON.
     
-    TASK: Rewrite the resume to target the Job Description (JD) while preserving the truth, and LOG every specific edit made.
+    TASK: 
+    1. Analyze the Resume vs Job Description (JD).
+    2. Calculate a REAL compatibility score (0-100).
+    3. Rewrite the resume to improve the score.
+    4. Log every specific edit.
     
     RESUME CONTEXT:
     {resume_context}
@@ -29,41 +33,42 @@ analysis_prompt = PromptTemplate(
     JOB DESCRIPTION:
     {jd_text}
     
-    INSTRUCTIONS:
-    1. **Rewriting:** - Rewrite bullet points to naturally include JD keywords using strong action verbs.
-       - Preserve Facts (Company Names, Dates, Titles must remain exact).
-       - Put the FULL rewritten markdown in 'rewritten_content'.
+    SCORING RULES (CRITICAL):
+    - **Original Score:** Calculate strictly based on how many JD keywords are currently present in the resume. 
+      (Example: If JD has 10 skills and Resume has 2, Score = 20). DO NOT RETURN 50. CALCULATE IT.
+    - **Optimized Score:** Predicted score after your rewrites. This should be significantly higher (85-100).
     
-    2. **Detailed Logging (Critical):**
-       - You MUST populate the 'detailed_edits' list.
-       - For every bullet point or sentence you modify/add, create an entry explaining exactly what changed.
-       - 'section': Where is this change? (e.g., "Experience - Google", "Skills").
-       - 'change_type': "Modification", "Addition", or "Deletion".
-       - 'original_text': The text BEFORE the change (or "N/A" if new).
-       - 'new_text': The text AFTER the change.
-       - 'keywords_added': List of JD keywords that justified this change.
-    
+    INSTRUCTIONS FOR EDITING:
+    - Analyze and edit ALL sections of the resume: Summary, Skills, Experience, Education, Projects, Certifications, etc.
+    - For Experience: Rewrite bullet points to include missing keywords using strong action verbs.
+    - For Skills: Add missing technical skills, tools, and technologies mentioned in the JD.
+    - For Summary/Objective: Align with JD requirements and add relevant keywords.
+    - For Education/Projects/Certifications: Highlight relevant coursework, projects, or certifications that match JD.
+    - Preserve company names, dates, and educational institutions.
+    - Populate 'detailed_edits' for EVERY change across ALL sections.
+
     OUTPUT FORMAT (Strict JSON):
     {{
-        "missing_skills": ["skill1", "skill2"],
+        "missing_skills": ["List actual missing skills here"],
+        "suggested_changes": [],
         "detailed_edits": [
             {{
-                "section": "Experience - Company A",
+                "section": "Experience",
                 "change_type": "Modification",
-                "original_text": "Worked on backend.",
-                "new_text": "Engineered scalable backend APIs using Python and AWS.",
-                "keywords_added": ["Scalable", "AWS", "Python"]
+                "original_text": "Old line...",
+                "new_text": "New line with keywords...",
+                "keywords_added": ["Java", "AWS"]
             }}
         ],
-        "original_score": 50,
-        "optimized_score": 90,
-        "rewritten_content": "# Name\\n## Experience..."
+        "original_score": <CALCULATED_INTEGER_0_TO_100>, 
+        "optimized_score": <CALCULATED_INTEGER_80_TO_100>,
+        "rewritten_content": "# Markdown Resume Content..."
     }}
 
     CRITICAL OUTPUT RULES:
     - Return ONLY valid JSON.
     - Start with {{ and end with }}.
-    - No markdown code blocks (```json).
+    - Do NOT copy the example scores. Calculate them based on the input data.
     """,
     input_variables=["resume_context", "jd_text"]
 )
