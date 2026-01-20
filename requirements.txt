@@ -13,3 +13,4 @@ chromadb
 markdown
 xhtml2pdf
 sentence-transformers
+markdown-pdf

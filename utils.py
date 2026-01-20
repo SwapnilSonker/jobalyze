@@ -5,6 +5,8 @@ import os
 from dotenv import load_dotenv
 import markdown
 from xhtml2pdf import pisa
+from pdf2docx import Converter
+from docx import Document
 
 load_dotenv()
 
@@ -75,3 +77,52 @@ def save_resume_as_pdf(markdown_content: str, output_filename: str):
         print("PDF generation error")
         return None
     return file_path
+
+def convert_pdf_to_docx(pdf_path: str, docx_path: str):
+    """
+    Converts a PDF file to a DOCX file while trying to preserve layout.
+    """
+    try:
+        cv = Converter(pdf_path)
+        # start=0, end=None means convert all pages
+        cv.convert(docx_path, start=0, end=None)
+        cv.close()
+        return True
+    except Exception as e:
+        print(f"Conversion Error: {e}")
+        return False
+
+def update_word_resume(input_path: str, edits: list, output_filename: str):
+    """
+    Applies text replacements to a DOCX file.
+    edits: List of dicts [{'original_text': '...', 'new_text': '...'}]
+    """
+    doc = Document(input_path)
+    
+    # Create a lookup dictionary for fast replacement
+    # Using strip() to handle minor spacing differences
+    replacements = {edit['original_text'].strip(): edit['new_text'] for edit in edits}
+
+    # Helper function to replace text in a paragraph
+    def replace_in_paragraph(paragraph):
+        text = paragraph.text.strip()
+        if text in replacements:
+            # Direct replacement preserves paragraph style but might lose internal bold/italic runs
+            paragraph.text = replacements[text]
+
+    # 1. Search in main paragraphs
+    for paragraph in doc.paragraphs:
+        replace_in_paragraph(paragraph)
+
+    # 2. Search in Tables (Resumes often use tables for layout)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    replace_in_paragraph(paragraph)
+
+    # Save
+    os.makedirs("generated_resumes", exist_ok=True)
+    save_path = f"generated_resumes/{output_filename}"
+    doc.save(save_path)
+    return save_path

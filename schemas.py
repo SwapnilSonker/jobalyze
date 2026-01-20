@@ -25,4 +25,4 @@ class LinkedInDraft(BaseModel):
 class AgentResponse(BaseModel):
     feedback: ResumeFeedback
     message: LinkedInDraft
-    pdf_download_link: str = Field(description="URL to download the updated resume PDF")
+    file_download_link: str = Field(description="URL to download the updated resume PDF")
