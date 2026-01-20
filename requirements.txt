@@ -10,3 +10,6 @@ langchain-chroma
 pdfplumber
 python-dotenv
 chromadb
+markdown
+xhtml2pdf
+sentence-transformers
