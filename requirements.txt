@@ -14,3 +14,8 @@ markdown
 xhtml2pdf
 sentence-transformers
 markdown-pdf
+sqlalchemy
+python-jose[cryptography]
+passlib[bcrypt]
+pdf2docx
+python-docx

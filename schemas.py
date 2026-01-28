@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 
 # Isme ab purana score, naya score, aur naya resume teeno aayenge
 
@@ -26,3 +27,60 @@ class AgentResponse(BaseModel):
     feedback: ResumeFeedback
     message: LinkedInDraft
     file_download_link: str = Field(description="URL to download the updated resume PDF")
+
+
+# --- Auth Schemas ---
+
+class UserCreate(BaseModel):
+    """Schema for user registration"""
+    email: str
+    username: str
+    password: str
+
+class UserResponse(BaseModel):
+    """Schema for user response (without password)"""
+    id: int
+    email: str
+    username: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class Token(BaseModel):
+    """Schema for JWT token response"""
+    access_token: str
+    token_type: str
+
+class LoginRequest(BaseModel):
+    """Schema for login request"""
+    email: str
+    password: str
+
+
+# --- Dashboard Schemas ---
+
+class ActivityItem(BaseModel):
+    """Schema for a single resume activity"""
+    id: int
+    original_filename: str
+    modified_filename: str
+    original_score: int
+    optimized_score: int
+    job_title: Optional[str]
+    created_at: datetime
+    download_link: Optional[str]
+    
+    class Config:
+        from_attributes = True
+
+class DashboardStats(BaseModel):
+    """Schema for dashboard statistics"""
+    total_resumes_updated: int
+    average_score_improvement: float
+    latest_activities: List[ActivityItem]
+
+class DashboardResponse(BaseModel):
+    """Schema for complete dashboard response"""
+    user: UserResponse
+    stats: DashboardStats
