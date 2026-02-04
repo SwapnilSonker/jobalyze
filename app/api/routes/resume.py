@@ -90,11 +90,46 @@ async def generate_agent(
             cover_letter_url = f"http://localhost:8000/download/{cover_letter_filename}"
             print(f"✅ Cover letter saved: {cover_letter_filename}")
 
-        # 7. Create legacy LinkedInDraft for compatibility
-        linkedin_message = LinkedInDraft(
-            subject_line="Excited About This Opportunity",
-            message_body="(Generated via enhanced workflow - see cover letter for detailed message)"
-        )
+        # 7. Generate LinkedIn/Email Message using AI
+        try:
+            from app.services.ai_service import llm
+            from langchain_core.prompts import PromptTemplate
+            
+            linkedin_prompt = PromptTemplate(
+                template="""Write a brief professional LinkedIn message (100-150 words).
+
+JOB DESCRIPTION:
+{jd_text}
+
+Write a message expressing interest. Return ONLY JSON:
+{{
+    "subject_line": "subject here",
+    "message_body": "Dear Hiring Manager,\\n\\n[message]\\n\\nBest regards"
+}}""",
+                input_variables=["jd_text"]
+            )
+            
+            linkedin_result = (linkedin_prompt | llm).invoke({"jd_text": jd_text[:500]})
+            
+            # Parse JSON
+            import re
+            import json as json_lib
+            text = linkedin_result.content if hasattr(linkedin_result, 'content') else str(linkedin_result)
+            match = re.search(r'\{[\s\S]*\}', text)
+            if match:
+                data = json_lib.loads(match.group(0))
+                linkedin_message = LinkedInDraft(
+                    subject_line=data.get("subject_line", "Application for Position"),
+                    message_body=data.get("message_body", "Message generated")
+                )
+            else:
+                raise ValueError("No JSON")
+        except Exception as e:
+            print(f"⚠️ LinkedIn message failed: {e}")
+            linkedin_message = LinkedInDraft(
+                subject_line="Application for Position",
+                message_body="Dear Hiring Manager,\n\nI am interested in this opportunity.\n\nBest regards"
+            )
 
         # 8. Create legacy ResumeFeedback for compatibility
         feedback = ResumeFeedback(
