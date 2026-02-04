@@ -126,3 +126,103 @@ def update_word_resume(input_path: str, edits: list, output_filename: str):
     save_path = f"generated_resumes/{output_filename}"
     doc.save(save_path)
     return save_path
+
+
+def save_cover_letter_as_pdf(markdown_content: str, output_filename: str) -> str:
+    """
+    Converts Markdown cover letter text into a formatted PDF file.
+    Uses letter-appropriate styling (different from resume).
+    """
+    # Professional Letter CSS
+    css = """
+    <style>
+        body { 
+            font-family: Georgia, 'Times New Roman', serif; 
+            font-size: 11pt; 
+            line-height: 1.6; 
+            color: #000; 
+            max-width: 650px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        h1 { 
+            font-size: 16pt; 
+            text-align: center; 
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        p { 
+            margin-bottom: 15px; 
+            text-align: justify;
+        }
+        strong { 
+            font-weight: bold; 
+        }
+        em { 
+            font-style: italic; 
+        }
+    </style>
+    """
+
+    # Convert Markdown to HTML
+    html_text = markdown.markdown(markdown_content)
+    full_html = f"<html><head>{css}</head><body>{html_text}</body></html>"
+
+    # Create folder if not exists
+    os.makedirs("generated_resumes", exist_ok=True)
+    file_path = f"generated_resumes/{output_filename}"
+    
+    # Write PDF
+    with open(file_path, "wb") as pdf_file:
+        pisa_status = pisa.CreatePDF(full_html, dest=pdf_file)
+    
+    if pisa_status.err:
+        print("Cover letter PDF generation error")
+        return None
+    return file_path
+
+
+def save_translated_resume_as_pdf(markdown_content: str, language: str, output_filename: str) -> str:
+    """
+    Save translated resume as PDF.
+    Handles different character sets and RTL languages if needed.
+    """
+    # Resume CSS (same as save_resume_as_pdf but can be customized per language)
+    css = """
+    <style>
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #333; }
+        h1 { color: #000; border-bottom: 2px solid #000; padding-bottom: 5px; margin-top: 20px; font-size: 18pt; text-transform: uppercase; }
+        h2 { color: #2c3e50; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 15px; font-size: 14pt; }
+        h3 { color: #444; font-size: 12pt; margin-top: 10px; margin-bottom: 2px; font-weight: bold; }
+        ul { margin-top: 5px; padding-left: 20px; }
+        li { margin-bottom: 3px; text-align: justify; }
+        p { margin-bottom: 5px; }
+        strong { color: #000; }
+    </style>
+    """
+    
+    # For RTL languages like Arabic or Hebrew
+    if language.lower() in ['arabic', 'hebrew']:
+        css += """
+        <style>
+            body { direction: rtl; text-align: right; }
+        </style>
+        """
+
+    # Convert Markdown to HTML
+    html_text = markdown.markdown(markdown_content)
+    full_html = f'<html><head><meta charset="UTF-8">{css}</head><body>{html_text}</body></html>'
+
+    # Create folder if not exists
+    os.makedirs("generated_resumes", exist_ok=True)
+    file_path = f"generated_resumes/{output_filename}"
+    
+    # Write PDF
+    with open(file_path, "wb") as pdf_file:
+        pisa_status = pisa.CreatePDF(full_html, dest=pdf_file)
+    
+    if pisa_status.err:
+        print(f"Translated resume PDF generation error for {language}")
+        return None
+    return file_path
+
