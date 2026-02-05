@@ -48,6 +48,7 @@ class Job(Base):
     jd_text = Column(Text, nullable=False)
     job_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationship back to user
     user = relationship("User", back_populates="jobs")

@@ -24,8 +24,8 @@ from pathlib import Path
 # Add parent directory to path so we can import our models
 sys.path.append(str(Path(__file__).parent.parent))
 
-from database import Base
-import models  # Import models to register them with Base
+from app.db.database import Base
+from app.db import models  # Import models to register them with Base
 
 target_metadata = Base.metadata
 

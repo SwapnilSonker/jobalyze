@@ -140,14 +140,18 @@ Write a message expressing interest. Return ONLY JSON:
             rewritten_content=workflow_results['rewritten_resume']
         )
 
-        # 9. Save Activity to Database
+        # 9. Extract job title from JD and save Activity to Database
+        from app.services.ai_service import extract_company_job_title
+        company, job_title = extract_company_job_title(jd_text)
+        
         activity = models.ResumeActivity(
             user_id=current_user.id,
             original_filename=original_filename,
             modified_filename=resume_filename,
             original_score=workflow_results['original_score'].score,
             optimized_score=workflow_results['optimized_score'].score,
-            download_link=resume_download_url
+            download_link=resume_download_url,
+            job_title=job_title  # Now populated with extracted job title
         )
         db.add(activity)
         db.commit()
